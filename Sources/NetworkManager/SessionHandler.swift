@@ -7,6 +7,9 @@
 
 import Foundation
 
+/// A structure that represents a session handler.
+///
+/// Use this structure to handle the data for a given URL request.
 public struct SessionHandler {
     public var data: (URLRequest) async throws -> (Data, URLResponse)
     

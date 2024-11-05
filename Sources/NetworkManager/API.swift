@@ -7,6 +7,56 @@
 
 import Foundation
 
+/// A structure that represents an API endpoint configuration.
+///
+/// Use this structure to define the components of your API endpoints, including the scheme,
+/// base URL, path, query parameters, HTTP method, and headers. It's typically used with an enum
+/// to create a type-safe API client.
+///
+/// Example:
+/// ```swift
+/// enum BookmarksAPI {
+///     case all
+///     case get(Bookmark.ID)
+///     case create(Bookmark)
+///     case update(Bookmark)
+///     case delete(Bookmark.ID)
+/// }
+///
+/// static func bookmarks(api: BookmarksAPI) -> API {
+///     API(
+///         scheme: { .https },
+///         baseURL: { "api.example.com" },
+///         path: {
+///             switch api {
+///             case .all: return "/bookmarks"
+///             case .get(let id): return "/bookmarks/\(id)"
+///             case .create: return "/bookmarks"
+///             case .update(let bookmark): return "/bookmarks/\(bookmark.id)"
+///             case .delete(let id): return "/bookmarks/\(id)"
+///             }
+///         },
+///         parameters: { nil },
+///         method: {
+///             switch api {
+///             case .all, .get: return .get
+///             case .create: return .post
+///             case .update: return .put
+///             case .delete: return .delete
+///             }
+///         },
+///         headers: { [:] }
+///     )
+/// }
+///
+/// // Usage:
+/// let getAllBookmarks = API.bookmarks(api: .all)
+/// let getBookmark = API.bookmarks(api: .get("123"))
+/// let createBookmark = API.bookmarks(api: .create(newBookmark))
+/// ```
+///
+/// The API structure uses closures for all properties, allowing for dynamic values that are
+/// evaluated when the endpoint is used.
 public struct API {
     public var scheme: () -> HTTPScheme
     public var baseURL: () -> String

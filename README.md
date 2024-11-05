@@ -29,6 +29,6 @@ dependencies: [
 ]
 ```
 
-## Usage
+## Documentation
 
------
+[NetworkManager Documentation](https://frankthamel.github.io/NetworkManager/documentation/networkmanager/)

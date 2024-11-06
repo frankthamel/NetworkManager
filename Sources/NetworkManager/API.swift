@@ -45,7 +45,8 @@ import Foundation
 ///             case .delete: return .delete
 ///             }
 ///         },
-///         headers: { [:] }
+///         headers: { [:] },
+///         body: { nil }   
 ///     )
 /// }
 ///
@@ -64,6 +65,7 @@ public struct API {
     public var parameters: () -> [URLQueryItem]?
     public var method: () -> HTTPMethod
     public var headers: () -> [String: String]?
+    public var body: () -> Encodable?
     
     public init(
         scheme: @escaping () -> HTTPScheme,
@@ -71,7 +73,8 @@ public struct API {
         path: @escaping () -> String,
         parameters: @escaping () -> [URLQueryItem]? = { nil },
         method: @escaping () -> HTTPMethod,
-        headers: @escaping () -> [String: String]? = { nil }
+        headers: @escaping () -> [String: String]? = { nil },
+        body: @escaping () -> Encodable? = { nil }
     ) {
         self.scheme = scheme
         self.baseURL = baseURL
@@ -79,5 +82,6 @@ public struct API {
         self.parameters = parameters
         self.method = method
         self.headers = headers
+        self.body = body
     }
 }

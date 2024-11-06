@@ -51,12 +51,12 @@ import Foundation
 public final class NetworkManager {
     
     // Builds URL from the API configuration
-    private class func buildURL(endpoint: API) -> URLComponents {
-        var components = URLComponents()
-        components.scheme = endpoint.scheme().rawValue
-        components.host = endpoint.baseURL()
-        components.path = endpoint.path()
-        components.queryItems = endpoint.parameters()
+    private class func buildURL(endpoint: API) -> URLComponents? {
+        
+        let baseURL = "\(endpoint.scheme().rawValue)://\(endpoint.baseURL())"
+        var components = URLComponents(string: baseURL)
+        components?.path = endpoint.path()
+        components?.queryItems = endpoint.parameters()
         return components
     }
     
@@ -70,12 +70,12 @@ public final class NetworkManager {
     ///   - sessionHandler: The session handler to use for the request. Defaults to a live session.
     /// - Returns: The decoded response from the API.
     /// - Throws: An error if the request fails or the response cannot be parsed.
-    class func request<T: Decodable>(
+    public class func request<T: Decodable>(
         endpoint: API,
         sessionHandler: SessionHandler = .live()
     ) async throws -> T {
         // Build the URL from the endpoint
-        guard let url = buildURL(endpoint: endpoint).url else {
+        guard let url = buildURL(endpoint: endpoint)?.url else {
             throw URLError(.badURL)
         }
         
@@ -88,6 +88,11 @@ public final class NetworkManager {
             for (key, value) in headers {
                 request.setValue(value, forHTTPHeaderField: key)
             }
+        }
+
+        // Encode the body if any
+        if let body = endpoint.body() {
+            request.httpBody = try JSONEncoder().encode(body)
         }
         
         // Perform network request
@@ -104,6 +109,49 @@ public final class NetworkManager {
             return decodedData
         } catch {
             throw URLError(.cannotParseResponse)
+        }
+    }
+
+    /// A request method for endpoints that don't return data (like DELETE operations).
+    ///
+    /// This method constructs the URL from the provided API configuration and performs the network request
+    /// without attempting to decode any response data.
+    ///
+    /// - Parameters:
+    ///   - endpoint: The API configuration defining the endpoint details.
+    ///   - sessionHandler: The session handler to use for the request. Defaults to a live session.
+    /// - Throws: An error if the request fails.
+    public class func request(
+        endpoint: API,
+        sessionHandler: SessionHandler = .live()
+    ) async throws {
+        // Build the URL from the endpoint
+        guard let url = buildURL(endpoint: endpoint)?.url else {
+            throw URLError(.badURL)
+        }
+        
+        // Create URLRequest
+        var request = URLRequest(url: url)
+        request.httpMethod = endpoint.method().rawValue
+        
+        // Add headers if any
+        if let headers = endpoint.headers() {
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+        }
+
+        // Encode the body if any
+        if let body = endpoint.body() {
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+        
+        // Perform network request
+        let (_, response) = try await sessionHandler.data(request)
+        
+        // Ensure response is HTTPURLResponse and status code is in the 200 range
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
         }
     }
 }
